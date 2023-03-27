@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MinimalApiCatalogo.ApiEndPoints;
+using MinimalApiCatalogo.AppServicesExtensions;
 using MinimalApiCatalogo.Context;
-using MinimalApiCatalogo.Models;
-using System.Reflection.Metadata.Ecma335;
-
 namespace MinimalApiCatalogo;
 
 public class Program
@@ -13,30 +11,23 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
         builder.Services.AddAuthorization();
 
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-
-        string? mySqlConnection = builder.Configuration.GetConnectionString("DefaultConnection");
-        builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(mySqlConnection,
-            ServerVersion.AutoDetect(mySqlConnection)));
+        builder.AddApiSwagger();
+        builder.AddPersistence();
+        builder.Services.AddCors();
 
         var app = builder.Build();
 
         app.MapCategoriasEndPoint();
         app.MapProdutoEndPoint();
 
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+        var enviroment = app.Environment;
+        app.UseExceptionHandling(enviroment)
+            .UseSwaggerMiddleware()
+            .UseAppCors(); 
 
         app.UseHttpsRedirection(); 
-
         app.UseAuthorization();
 
         app.Run();
